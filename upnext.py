@@ -11,14 +11,17 @@ import WebKit
 import EventKit
 import Foundation
 
-MEET_RE = re.compile(r'https://meet\.google\.com/[a-z0-9\-]+', re.IGNORECASE)
-ZOOM_RE = re.compile(r'https://[a-z0-9.]*zoom\.us/j/[^\s<>"\']+', re.IGNORECASE)
+MEET_RE  = re.compile(r'https://meet\.google\.com/[a-z0-9\-]+', re.IGNORECASE)
+ZOOM_RE  = re.compile(r'https://[a-z0-9.]*zoom\.us/j/[^\s<>"\']+', re.IGNORECASE)
+TEAMS_RE = re.compile(r'https://teams\.microsoft\.com/l/meetup-join/[^\s<>"\']+', re.IGNORECASE)
 
 def extract_join_link(text):
     if not text: return None
     m = MEET_RE.search(text)
     if m: return m.group(0)
     m = ZOOM_RE.search(text)
+    if m: return m.group(0).rstrip(')')
+    m = TEAMS_RE.search(text)
     if m: return m.group(0).rstrip(')')
     return None
 
@@ -45,8 +48,9 @@ def _fetch_single_month(store, year, month):
         to_ns(sod), to_ns(eod), cals)
     raw = store.eventsMatchingPredicate_(pred) or []
     events = []
+    show_allday = load_show_allday()
     for ev in raw:
-        if ev.isAllDay(): continue
+        if ev.isAllDay() and not show_allday: continue
         title    = ev.title() or "Untitled"
         start    = from_ns(ev.startDate())
         end      = from_ns(ev.endDate())
@@ -157,6 +161,14 @@ def make_menubar_icon(day):
 # ── appearance ─────────────────────────────────────────────────────────────────
 
 APPEARANCE_KEY = "UpNextAppearance"
+ALLDAY_KEY     = "UpNextShowAllDay"
+
+def load_show_allday():
+    v = Foundation.NSUserDefaults.standardUserDefaults().objectForKey_(ALLDAY_KEY)
+    return bool(v) if v is not None else False
+
+def save_show_allday(val):
+    Foundation.NSUserDefaults.standardUserDefaults().setBool_forKey_(val, ALLDAY_KEY)
 ACCENT_KEY     = "UpNextAccent"
 
 ACCENT_COLORS = {
@@ -728,6 +740,8 @@ def generate_prefs_html(current_mode):
                 swatch('green','#34C759') + swatch('yellow','#FFD60A'))
     pa = ACCENT_COLORS[cur_accent]
     p_accent_style = f'style="--accent:{pa};--today-bg:{pa}"'
+    allday_on = load_show_allday()
+    allday_chk = ' on' if allday_on else ''
     return f"""<!DOCTYPE html>
 <html class="{bc}" {p_accent_style}><head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -743,11 +757,14 @@ def generate_prefs_html(current_mode):
 {row('dark','Dark')}
 <div class="prefs-title" style="margin-top:4px">Accent Color</div>
 <div class="accent-row">{swatches}</div>
+<div class="prefs-title" style="margin-top:4px">Events</div>
+<div class="mode-row" onclick="window.webkit.messageHandlers.action.postMessage('allday:toggle')">
+  <span class="mode-check{allday_chk}"></span>Show all-day events</div>
 </body></html>"""
 
 
 PREFS_W   = 180
-PREFS_H   = 28 + 3 * 34 + 28 + 46  # appearance rows + accent section
+PREFS_H   = 28 + 3 * 34 + 28 + 46 + 28 + 34  # + events section
 POPOVER_W = 240
 MAX_POP_H = 500   # fixed height — events pane always scrolls
 
@@ -784,6 +801,11 @@ class JoinHandler(AppKit.NSObject):
                 AppKit.NSWorkspace.sharedWorkspace().openURL_(
                     Foundation.NSURL.URLWithString_(native))
                 return
+        if 'teams.microsoft.com/l/meetup-join/' in url_str:
+            native = 'msteams:' + url_str[len('https:'):]
+            AppKit.NSWorkspace.sharedWorkspace().openURL_(
+                Foundation.NSURL.URLWithString_(native))
+            return
         AppKit.NSWorkspace.sharedWorkspace().openURL_(
             Foundation.NSURL.URLWithString_(url_str))
 
@@ -865,6 +887,10 @@ class PrefsActionHandler(AppKit.NSObject):
                 save_accent_color(name)
                 self._delegate.applyAppearance_(load_appearance_mode())
                 self._delegate.refreshPrefsPanel()
+        elif payload == "allday:toggle":
+            save_show_allday(not load_show_allday())
+            self._delegate.applyAppearance_(load_appearance_mode())
+            self._delegate.refreshPrefsPanel()
 
 
 class HuddleDelegate(AppKit.NSObject):
