@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- calendar body -->
+  <rect x="16" y="40" width="224" height="200" rx="24" ry="24" fill="#ffffff" stroke="#e0e0e0" stroke-width="6"/>
+  <!-- top red bar -->
+  <rect x="16" y="40" width="224" height="68" rx="24" ry="24" fill="#FF3B30"/>
+  <rect x="16" y="80" width="224" height="28" fill="#FF3B30"/>
+  <!-- ring left -->
+  <rect x="72" y="16" width="20" height="52" rx="10" ry="10" fill="#555"/>
+  <!-- ring right -->
+  <rect x="164" y="16" width="20" height="52" rx="10" ry="10" fill="#555"/>
+  <!-- day number -->
+  <text x="128" y="198" font-family="-apple-system, SF Pro Display, Helvetica Neue, sans-serif"
+        font-size="110" font-weight="600" fill="#1c1c1e" text-anchor="middle">18</text>
+  <!-- weekday label in red bar -->
+  <text x="128" y="92" font-family="-apple-system, SF Pro Display, Helvetica Neue, sans-serif"
+        font-size="28" font-weight="500" fill="rgba(255,255,255,0.85)" text-anchor="middle">
+    JUNE
+  </text>
+</svg>
