@@ -28,7 +28,7 @@ Click the calendar icon in your menu bar to see today's meetings — greeting, d
 
 ## Installation
 
-1. Download `UpNext-v3.0.zip` from [Releases](../../releases/latest)
+1. Download `UpNext-v3.1.zip` from [Releases](../../releases/latest)
 2. Unzip and move `UpNext.app` to your Applications folder
 3. Double-click to open
 4. If macOS blocks it: **System Settings → Privacy & Security → Open Anyway**
